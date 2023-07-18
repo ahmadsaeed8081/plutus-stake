@@ -8,6 +8,7 @@ import { setOpenSidebar } from "../../store/reducers/globalReducer";
 import Web3 from "web3";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
 import { cont_address, cont_abi, tokenABI, Token_address } from "../config";
+import { Web3Button } from '@web3modal/react'
 
 const Header = (props) => {
 
@@ -259,9 +260,9 @@ const Header = (props) => {
           <div className="action flex items-center justify-center">
             <button
               className="btn-connect button"
-              onClick={(e) => setOpenConnectWallet(true)}
+              // onClick={(e) => setOpenConnectWallet(true)}
             >
-              Connect Wallet
+              <Web3Button/>
             </button>
           </div>
         </div>

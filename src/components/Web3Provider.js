@@ -1,12 +1,3 @@
-/* eslint-disable no-unused-vars */
-import React from "react";
-
-import "./css/App.scss";
-import "./index.css";
-
-import Routing from "./routes/Routing";
-
-
 import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum'
 import { Web3Modal } from '@web3modal/react'
 import { configureChains, createConfig, WagmiConfig } from 'wagmi'
@@ -22,19 +13,14 @@ const wagmiConfig = createConfig({
   publicClient
 })
 const ethereumClient = new EthereumClient(wagmiConfig, chains)
-function App({ Component, pageProps }) {
 
+ export default function Web3Provider() {
   return (
     <>
-
-        <WagmiConfig config={wagmiConfig}>
-          <Routing {...pageProps} />
-        </WagmiConfig>
-
+      <WagmiConfig config={wagmiConfig}>
+      </WagmiConfig>
 
       <Web3Modal projectId={projectId} ethereumClient={ethereumClient} />
     </>
-  );
+  )
 }
-
-export default App;
