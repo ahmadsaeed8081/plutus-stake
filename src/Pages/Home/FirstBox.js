@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import Timer from "../../components/Timer";
 import {
   ArrowDownIcon,
@@ -6,6 +6,21 @@ import {
   ArrowDownIcon2,
   ArrowUpIcon,
 } from "../../assets/Icons";
+
+import { stake1_address,stake1_abi,token_abi,Stake2_token_Address } from "../../components/config";
+import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite } from 'wagmi'
+
+import { useAccount, useDisconnect } from 'wagmi'
+
+import Web3 from "web3";
+const stake2_Contract = {
+  address: stake1_address,
+  abi: stake1_abi,
+}
+const stakeTokem_Contract = {
+  address: Stake2_token_Address,
+  abi: token_abi,
+}
 
 const FirstBox = ({
   headerTabsList,
@@ -32,7 +47,159 @@ const FirstBox = ({
   setToken4,
   setOpen,
 }) => {
+  const { address, isConnecting ,isDisconnected} = useAccount()
+
   const [expend, setExpend] = useState(false);
+  const [allowedTokens, set_allowedTokens] = useState([]);
+  const [stakeAmount, setStakedAmount] = useState(0);
+
+
+  useEffect(()=>{
+    let count=0;
+    if(count==0&& address!=undefined)
+    {
+        test()
+        count++;
+    }
+  
+  },address)
+
+
+  const { config } = usePrepareContractWrite({
+    address: token1[1],
+    abi: token_abi,
+    functionName: 'approve',
+    args: [stake1_address,stakeAmount*10**18]
+  })
+
+  const { config:stakeConfig } = usePrepareContractWrite({
+    address: stake1_address,
+    abi: stake1_abi,
+    functionName: 'Stake',
+    args: [token1[1],stakeAmount*10**18],
+    value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+
+    const { data1, isLoading, isSuccess, write } = useContractWrite(config)
+  
+    const { data:stakeResult, isLoading2, isSuccess2, write:staking } = useContractWrite(stakeConfig)
+  
+
+
+  const { data, isError1, isLoading1 } = useContractReads({
+    contracts: [
+      {
+        ...stake2_Contract,
+        functionName: 'Apy',
+      },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'getTotalInvestment',
+
+      // },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'get_currTime',
+        
+      // },
+
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'owner',
+        
+      // },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'totalusers',
+        
+      // },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'totalbusiness',
+        
+      // },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'user',
+      //   args:[address]
+        
+      // },
+      // {
+      //   ...stake2_Contract,
+      //   functionName: 'get_withdrawnTime',
+      //   args: [1]
+        
+      // },
+
+
+
+
+
+      {
+        ...stakeTokem_Contract,
+        functionName: 'balanceOf',
+        args: [address]
+        
+      },
+      
+      
+      
+
+    ],
+  })
+
+  async function test(){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+  
+              
+  //  const balance =await  web3.eth.getBalance(address)
+    const contract=new web3.eth.Contract(stake1_abi,stake1_address);
+    
+    let allowed_tokens = await contract.methods.getAll_allowedTokens().call({from:address});    
+    set_allowedTokens(allowed_tokens);
+    console.log("allowed_tokens "+allowed_tokens);
+    setToken1(allowed_tokens[0])
+    // let Total_withdraw = await contract.methods.total_withdraw_reaward().call({ from: address });       
+
+    // let allInvestments = await contract.methods.getAll_investments().call({from: address});
+
+    // set_investmentList(allInvestments);
+    // setSelectedAmount(allInvestments[0]);
+    // set_totalReward(totalReward);
+    // set_Total_withdraw(Total_withdraw);
+
+
+
+  } 
+
+  function stake()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    if(stakeAmount==0 )
+    {
+      alert("kindly write amount to stake ");
+      return;
+    }
+    let fee= (stakeAmount*0.3)/(100)
+    fee=fee*10**18;
+
+    if(Number(data[1].result) < Number(fee))
+    {
+      alert("You dont have enough balance");
+      return;
+    }
+    write?.()
+    staking?.();
+
+  }
+
+
+
+
+
 
   const BodyBottom = () => {
     return (
@@ -117,43 +284,90 @@ const FirstBox = ({
                 </div>
               </div>
               <div className="input-form flex flex-col">
-                <div className="input-field flex flex-col">
+              <div className="input-field flex flex-col">
                   <div className="field-hdr flex items-center justify-between">
-                    <h1 className="f-tag">Paste token:</h1>
-                    <div className="icon flex items-center justify-center">
-                      <QuestionIcon />
+                    <h1 className="f-tag">Choose PLP Pair:</h1>
+                  </div>
+                  <div className="dropDown flex items-center justify-center flex-col relative">
+                    <div className="category flex items-center">
+                      <div
+                        className="cbox cleanbtn flex items-center relative pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHide1(!hide1);
+                        }}
+                      >
+                        <div className="slt flex items-center">
+                          {/* <div className="icon flex items-center justify-center">
+                            <img
+                              src={token1 ? token1.img : "/images/btc.png"}
+                              className="img"
+                            />
+                          </div> */}
+                          <div className="unit-name flex aic font s14 b4">
+                            <span
+                              className="unit-eng flex aic font s14 b4"
+                              placeholder="Plano"
+                            >
+                              {token1 ? token1[0] : ""}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="arrow-icon flex items-center justify-center">
+                          <ArrowDownIcon />
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`block flex aic abs ${hide1 ? "show" : ""}`}
+                    >
+                      <div className="manue flex aic col anim">
+                        {allowedTokens.map((item, index) => (
+                          <div
+                            key={index}
+                            className="slt flex aic"
+                            onClick={(e) => {
+                              setHide1(!hide1);
+                              setToken1(item);
+                            }}
+                          >
+                            <div className="unit-name flex aic font s14 b4">
+                              <span className="unit-eng flex aic font s14 b4">
+                                {item[0]}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="field-i-box flex items-center">
-                    <input
-                      type="text"
-                      className="txt cleanbtn w-full"
-                      placeholder="Token"
-                    />
-                  </div>
-                </div>
+                </div> 
                 <div className="input-field flex flex-col">
                   <div className="field-hdr flex items-center justify-between">
                     <h1 className="f-tag">Paste token:</h1>
                     <h1 className="f-tag">
-                      Balance: <span className="font-semibold">0LPT</span>
+                      Balance: <span className="font-semibold">{token1?Number(token1[2])/10**18:0}</span>
                     </h1>
                   </div>
                   <div className="field-i-box flex items-center">
                     <input
-                      type="text"
+                      type="number"
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
+                      value={stakeAmount}
+                      max={token1?Number(token1[2])/10**18:0}
+                      onChange={(e)=>setStakedAmount(e.target.value)}
                     />
                     <div className="ib-right flex items-center">
                       <h1 className="ib-txt">LPT</h1>
-                      <button className="ib-btn button">Max</button>
+                      <button className="ib-btn button"onClick={(e)=>setStakedAmount((Number(token1[2])/10**18))}>Max</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <button className="btn-stack button">Stake Now</button>
+            <button className="btn-stack button" onClick={stake}>Stake Now</button>
           </div>
           <BodyBottom />
         </div>
@@ -193,18 +407,18 @@ const FirstBox = ({
                         }}
                       >
                         <div className="slt flex items-center">
-                          <div className="icon flex items-center justify-center">
+                          {/* <div className="icon flex items-center justify-center">
                             <img
                               src={token1 ? token1.img : "/images/btc.png"}
                               className="img"
                             />
-                          </div>
+                          </div> */}
                           <div className="unit-name flex aic font s14 b4">
                             <span
                               className="unit-eng flex aic font s14 b4"
                               placeholder="Plano"
                             >
-                              {token1 ? token1.lbl : ""}
+                              {token1 ? token1[0] : ""}
                             </span>
                           </div>
                         </div>
@@ -218,7 +432,7 @@ const FirstBox = ({
                       className={`block flex aic abs ${hide1 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {allowedTokens.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
@@ -229,7 +443,7 @@ const FirstBox = ({
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                                {token1[0]}
                               </span>
                             </div>
                           </div>

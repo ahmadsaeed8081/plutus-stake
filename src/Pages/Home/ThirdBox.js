@@ -1,11 +1,32 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import Timer from "../../components/Timer";
+import Modal from "../../components/Modal";
+
 import {
   ArrowDownIcon,
   QuestionIcon,
   ArrowDownIcon2,
   ArrowUpIcon,
 } from "../../assets/Icons";
+
+
+import ConfirmationPopup from "../../components/confirmationPopup";
+import Web3 from "web3";
+import { useAccount, useDisconnect } from 'wagmi'
+import {stake3_address,stake2_3_abi,token_abi,Stake3_token_Address } from "../../components/config";
+import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite } from 'wagmi'
+
+
+const stake3_Contract = {
+  address: stake3_address,
+  abi: stake2_3_abi,
+}
+const stakeTokem_Contract = {
+  address: Stake3_token_Address,
+  abi: token_abi,
+}
+
+
 
 const ThirdBox = ({
   headerTabsList,
@@ -22,9 +43,266 @@ const ThirdBox = ({
   setToken7,
   token8,
   setToken8,
-  setOpen,
 }) => {
+
+
+
+
+
   const [expend, setExpend] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [totalReward, set_totalReward] = useState(0);
+  const [Total_withdraw, set_Total_withdraw] = useState(0);
+
+  const [stakeAmount, setStakedAmount] = useState(0);
+
+  const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
+  const [allInvestments, set_investmentList] = useState([]);
+  const [selectedAmount, setSelectedAmount] = useState(null);
+
+
+  const { address, isConnecting ,isDisconnected} = useAccount()
+  // const { disconnect } = useDisconnect()
+
+  // console.log(typeOf(address));
+
+  const { config } = usePrepareContractWrite({
+    address: Stake3_token_Address,
+    abi: token_abi,
+    functionName: 'approve',
+    args: [stake3_address,stakeAmount*10**18]
+  })
+  const { config:stakeConfig } = usePrepareContractWrite({
+    address: stake3_address,
+    abi: stake2_3_abi,
+    functionName: 'Stake',
+    args: [stakeAmount*10**18],
+    value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+
+    const { config:unstakeConfig } = usePrepareContractWrite({
+      address: stake3_address,
+      abi: stake2_3_abi,
+      functionName: 'unStake',
+      args: [choosed_Unstake_inv],
+    
+    })
+
+
+    const { config:claimRewardConfig } = usePrepareContractWrite({
+      address: stake3_address,
+      abi: stake2_3_abi,
+      functionName: 'withdrawReward',
+    
+    })
+
+
+  const { data1, isLoading, isSuccess, write } = useContractWrite(config)
+  const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
+
+  const { data:stakeResult, isLoading2, isSuccess2, write:staking } = useContractWrite(stakeConfig)
+
+  const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
+
+useEffect(()=>{
+  let count=0;
+  if(count==0&& address!=undefined)
+  {
+      test()
+      count++;
+  }
+
+},address)
+  const { data, isError1, isLoading1 } = useContractReads({
+    contracts: [
+      {
+        ...stake3_Contract,
+        functionName: 'Apy',
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'getTotalInvestment',
+
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'get_currTime',
+        
+      },
+
+      {
+        ...stake3_Contract,
+        functionName: 'owner',
+        
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'totalusers',
+        
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'totalbusiness',
+        
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'user',
+        args:[address]
+        
+      },
+      {
+        ...stake3_Contract,
+        functionName: 'get_withdrawnTime',
+        args: [1]
+        
+      },
+
+
+
+
+
+      {
+        ...stakeTokem_Contract,
+        functionName: 'balanceOf',
+        args: [address]
+        
+      },
+      
+      
+      
+
+    ],
+  })
+
+
+
+  
+  async function test(){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+  
+              
+   const balance =await  web3.eth.getBalance(address)
+    const contract=new web3.eth.Contract(stake2_3_abi,stake3_address);
+    
+    let totalReward = await contract.methods.get_TotalReward().call({ from: address });       
+    let Total_withdraw = await contract.methods.total_withdraw_reaward().call({ from: address });       
+
+    let allInvestments = await contract.methods.getAll_investments().call({from: address});
+             console.log("bal "+allInvestments);
+
+    set_investmentList(allInvestments);
+    setSelectedAmount(allInvestments[0]);
+    set_totalReward(totalReward);
+    set_Total_withdraw(Total_withdraw);
+
+
+
+  }  
+// function Max()
+// {
+
+
+// }
+
+  
+
+
+  function stake()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    if(stakeAmount==0 )
+    {
+      alert("kindly write amount to stake ");
+      return;
+    }
+    let fee= (stakeAmount*0.3)/(100)
+    fee=fee*10**18;
+
+    if(Number(data[8].result) < Number(fee))
+    {
+      alert("You dont have enough balance");
+      return;
+    }
+    write?.()
+    staking?.();
+
+  }
+
+
+  function unstaking()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    console.log("object unstake "+choosed_Unstake_inv);
+    // if(stakeAmount==0 )
+    // {
+    //   alert("kindly write amount to stake ");
+    //   return;
+    // }
+
+
+    // if(Number(data[10].result) < Number(fee))
+    // {
+    //   alert("You dont have enough balance");
+    //   return;
+    // }
+    unstake?.()
+    console.log(data__unstake);
+    
+
+  }
+
+  function ClaimReward()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    console.log("object withdraw "+choosed_Unstake_inv);
+    // if(stakeAmount==0 )
+    // {
+    //   alert("kindly write amount to stake ");
+    //   return;
+    // }
+
+
+    // if(Number(data[10].result) < Number(fee))
+    // {
+    //   alert("You dont have enough balance");
+    //   return;
+    // }
+    withdrawReward?.()
+    
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const BodyBottom = () => {
     return (
       <div className="body-bottom flex flex-col w-full">
@@ -113,24 +391,27 @@ const ThirdBox = ({
                   <div className="field-hdr flex items-center justify-between">
                     <h1 className="f-tag">Select Amount:</h1>
                     <h1 className="f-tag">
-                      Balance: <span className="font-semibold">0LPT</span>
+                    Balance: <span className="font-semibold">{data?(Number(data[8].result)/10**18):0} PLP</span>
                     </h1>
                   </div>
                   <div className="field-i-box flex items-center">
                     <input
-                      type="text"
+                      type="number"
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
+                      value={stakeAmount}
+                      max={data?(Number(data[8].result)/10**18):0}
+                      onChange={(e)=>setStakedAmount(e.target.value)}
                     />
                     <div className="ib-right flex items-center">
-                      <h1 className="ib-txt">LPT</h1>
-                      <button className="ib-btn button">Max</button>
+                      <h1 className="ib-txt">PLP</h1>
+                      <button className="ib-btn button" onClick={(e)=>setStakedAmount((Number(data[8].result)/10**18))} >Max</button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-            <button className="btn-stack button">Stake Now</button>
+            <button className="btn-stack button" onClick={stake}>Stake Now</button>
           </div>
           <BodyBottom />
         </div>
@@ -145,7 +426,7 @@ const ThirdBox = ({
           {boxNumb !== 3 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
             <img src="/images/s3.png" className="img" />
-            <h1 className="top-tag">wPLS/WBTC</h1>
+            <h1 className="top-tag">KORE/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
             <div className="flex flex-col">
@@ -175,8 +456,10 @@ const ThirdBox = ({
                               className="unit-eng flex items-center font s14 b4"
                               placeholder="Plano"
                             >
-                              {token7 ? token7.lbl : ""}
-                            </span>
+                                 {selectedAmount
+                                      ? selectedAmount[0]/10**18
+                                      : "0"}                             
+                                       </span>
                           </div>
                         </div>
 
@@ -189,18 +472,21 @@ const ThirdBox = ({
                       className={`block flex aic abs ${hide7 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {allInvestments.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
                             onClick={(e) => {
                               setHide7(!hide7);
                               setToken7(item);
+                              setSelectedAmount(item);
+                              set_choosed_Unstake_inv(item[3])
+                              console.log("its item "+item);
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                              {Number(item[0])/10**18}
                               </span>
                             </div>
                           </div>
@@ -208,7 +494,7 @@ const ThirdBox = ({
                       </div>
                     </div>
                   </div>
-                  <Timer />
+                  <Timer time={selectedAmount ? Number(selectedAmount[1]): 0} />
                 </div>
               </div>
             </div>
@@ -236,11 +522,11 @@ const ThirdBox = ({
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">$1000.00</h1>
+                  <h1 className="item-lbl text-white">${Number(Total_withdraw)+Number(totalReward)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">$100</h1>
+                  <h1 className="item-lbl text-white">${Number(totalReward)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -263,8 +549,10 @@ const ThirdBox = ({
                               className="unit-eng flex items-center font s14 b4"
                               placeholder="Plano"
                             >
-                              {token8 ? token8.lbl : ""}
-                            </span>
+                                 {selectedAmount
+                                      ? selectedAmount[0]/10**18
+                                      : "0"}   
+                                                                  </span>
                           </div>
                         </div>
 
@@ -277,18 +565,18 @@ const ThirdBox = ({
                       className={`block flex aic abs ${hide8 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {allInvestments.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
                             onClick={(e) => {
                               setHide8(!hide8);
-                              setToken8(item);
+                              setSelectedAmount(item);
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                              {Number(item[0])/10**18}
                               </span>
                             </div>
                           </div>
@@ -298,11 +586,11 @@ const ThirdBox = ({
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">$700.00</span>
+                      Earning : <span className="c-theme">${selectedAmount[6]}</span>
                     </h1>
                   </div>
                 </div>
-                <div className="input-field flex flex-col">
+                {/* <div className="input-field flex flex-col">
                   <div className="field-hdr flex items-center justify-between">
                     <h1 className="f-tag">Claim Reward:</h1>
                   </div>
@@ -316,14 +604,17 @@ const ThirdBox = ({
                       <button className="ib-btn button">Max</button>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
-            <button className="btn-stack button">Unstake</button>
+            <button className="btn-stack button" onClick={ClaimReward}>Claim </button>
           </div>
           <BodyBottom />
         </div>
       ) : null}
+        <Modal open={open} onClose={() => setOpen(false)}>
+          <ConfirmationPopup setOpen={setOpen} unstaking={unstaking}/>
+        </Modal>
     </div>
   );
 };

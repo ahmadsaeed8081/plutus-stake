@@ -12,6 +12,7 @@ import "swiper/css/pagination";
 
 // import required modules
 import { Pagination } from "swiper/modules";
+import Web3 from "web3";
 
 import Timer from "../../components/Timer";
 import Modal from "../../components/Modal";
@@ -19,8 +20,23 @@ import Wrapper from "../../routes/Wrapper";
 import ConfirmationPopup from "../../components/confirmationPopup";
 import { QuestionIcon, ArrowDownIcon } from "../../assets/Icons";
 
+import { stake1_address,stake2_address,stake3_address,stake1_abi,stake2_3_abi } from "../../components/config";
+const stake1_Contract = {
+  address: stake1_address,
+  abi: stake1_abi,
+}
+const stake2_Contract = {
+  address: stake2_address,
+  abi: stake2_3_abi,
+}
+const stake3_Contract = {
+  address: stake3_address,
+  abi: stake2_3_abi,
+}
+
+
 const Main = () => {
-  const [open, setOpen] = useState(false);
+
   const [boxNumb, setBoxNumb] = useState(1);
   const [selectedTab, setSelectedTab] = useState("Stake");
   const [selectedTab2, setSelectedTab2] = useState("Stake");
@@ -42,15 +58,15 @@ const Main = () => {
   const [token2, setToken2] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const [token3, setToken3] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const [token4, setToken4] = useState({ img: "/images/btc.png", lbl: "BTC" });
-  const [token5, setToken5] = useState({ img: "/images/btc.png", lbl: "BTC" });
+  const [token5, setToken5] = useState([]);
   const [token6, setToken6] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const [token7, setToken7] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const [token8, setToken8] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const tokensList = [
-    { img: "/images/btc.png", lbl: "BTC", slug: "btc" },
-    { img: "/images/usdt.png", lbl: "USDT" },
-    { img: "/images/trx.png", lbl: "BUSD" },
-    { img: "/images/btcoin.png", lbl: "BTC" },
+    { img: "/images/btc.png", lbl: "PLUTUS/BTC", },
+    { img: "/images/usdt.png", lbl: "PLUTUS/USDT" },
+    { img: "/images/trx.png", lbl: "PLUTUS/BUSD" },
+    { img: "/images/btcoin.png", lbl: "PLUTUS/BTC" },
   ];
 
   useEffect(() => {
@@ -63,6 +79,27 @@ const Main = () => {
       setHide6(false);
     });
   }, []);
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   return (
     <Wrapper>
@@ -97,7 +134,6 @@ const Main = () => {
               setToken3={setToken3}
               token4={token4}
               setToken4={setToken4}
-              setOpen={setOpen}
             />
             {/* Second Box */}
             <SecondBox
@@ -115,7 +151,6 @@ const Main = () => {
               setToken5={setToken5}
               token6={token6}
               setToken6={setToken6}
-              setOpen={setOpen}
             />
             {/* Third Box */}
             <ThirdBox
@@ -133,7 +168,6 @@ const Main = () => {
               setToken7={setToken7}
               token8={token8}
               setToken8={setToken8}
-              setOpen={setOpen}
             />
           </div>
           <div className="page-slider">
@@ -166,7 +200,6 @@ const Main = () => {
                   setToken3={setToken3}
                   token4={token4}
                   setToken4={setToken4}
-                  setOpen={setOpen}
                 />
               </SwiperSlide>
               <SwiperSlide>
@@ -208,9 +241,7 @@ const Main = () => {
             </Swiper>
           </div>
         </div>
-        <Modal open={open} onClose={() => setOpen(false)}>
-          <ConfirmationPopup setOpen={setOpen} />
-        </Modal>
+
       </div>
     </Wrapper>
   );
