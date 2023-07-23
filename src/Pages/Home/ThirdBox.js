@@ -586,7 +586,7 @@ useEffect(()=>{
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">${selectedAmount[6]}</span>
+                      Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]:0}</span>
                     </h1>
                   </div>
                 </div>
