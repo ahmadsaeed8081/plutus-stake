@@ -1,4 +1,4 @@
-export const stake1_address="0x82C81a0Fc0de5A20E6027Def94Ebc921318B2165";
+export const stake1_address="0xd9216Ece51A68B9f73398F2599C854AFb4077b47";
 export const stake2_address="0x550Ae8B139fafD4017C7E54cE3f224d6151ED583";
 export const stake3_address="0x550Ae8B139fafD4017C7E54cE3f224d6151ED583";
 export  const Stake2_token_Address="0xd562bEA1e3ca6236e3c2626b5E1499f44E9002b7";
@@ -29,7 +29,7 @@ export const stake1_abi=[
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "paired_token",
+				"name": "lp_token",
 				"type": "address"
 			},
 			{
@@ -110,13 +110,7 @@ export const stake1_abi=[
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "lp_token",
-				"type": "address"
-			}
-		],
+		"inputs": [],
 		"name": "withdrawReward",
 		"outputs": [
 			{
@@ -342,13 +336,7 @@ export const stake1_abi=[
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "lp_token",
-				"type": "address"
-			}
-		],
+		"inputs": [],
 		"name": "getReward",
 		"outputs": [
 			{
@@ -393,25 +381,6 @@ export const stake1_abi=[
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "lp_token_pair",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "owner",
 		"outputs": [
@@ -446,6 +415,25 @@ export const stake1_abi=[
 			}
 		],
 		"name": "total_withdraw_reaward",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "total_withdrawReward",
 		"outputs": [
 			{
 				"internalType": "uint256",

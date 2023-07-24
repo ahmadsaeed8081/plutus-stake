@@ -572,7 +572,7 @@ console.log(data?data[3].result:null);
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                    Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]:0}</span>
+                      Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]:0}</span>
                     </h1>
                   </div>
                 </div>

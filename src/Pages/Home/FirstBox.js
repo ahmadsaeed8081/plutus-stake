@@ -6,9 +6,11 @@ import {
   ArrowDownIcon2,
   ArrowUpIcon,
 } from "../../assets/Icons";
+import Modal from "../../components/Modal";
 
 import { stake1_address,stake1_abi,token_abi,Stake2_token_Address } from "../../components/config";
 import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite } from 'wagmi'
+import ConfirmationPopup from "../../components/confirmationPopup";
 
 import { useAccount, useDisconnect } from 'wagmi'
 
@@ -45,17 +47,26 @@ const FirstBox = ({
   setToken3,
   token4,
   setToken4,
-  setOpen,
 }) => {
   const { address, isConnecting ,isDisconnected} = useAccount()
+  const [open, setOpen] = useState(false);
 
   const [expend, setExpend] = useState(false);
   const [allowedTokens, set_allowedTokens] = useState([]);
   const [stakeAmount, setStakedAmount] = useState(0);
+  const [unstakeDetails, set_unstakeDetails] = useState([]);
+  const [slected_pair, set_slected_pair] = useState([[]]);
+  const [slected_pair_inv, set_slected_pair_inv] = useState([]);
+  const [totalReward, set_totalReward] = useState(0);
+  const [Total_withdraw, set_Total_withdraw] = useState(0);
+  const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
+  const [slected_plp_add, set_slected_plp_add] = useState("");
+
+  let details=[];
+  let count=0;
 
 
   useEffect(()=>{
-    let count=0;
     if(count==0&& address!=undefined)
     {
         test()
@@ -65,25 +76,60 @@ const FirstBox = ({
   },address)
 
 
-  const { config } = usePrepareContractWrite({
-    address: token1[1],
-    abi: token_abi,
-    functionName: 'approve',
-    args: [stake1_address,stakeAmount*10**18]
-  })
 
-  const { config:stakeConfig } = usePrepareContractWrite({
-    address: stake1_address,
+
+
+
+  
+    const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+
+      address: stake1_address,
     abi: stake1_abi,
     functionName: 'Stake',
     args: [token1[1],stakeAmount*10**18],
-    value: ((stakeAmount*0.3/100) * (10**18)).toString() })
-
-    const { data1, isLoading, isSuccess, write } = useContractWrite(config)
+    value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+    onSuccess(data) {
+      test();
+      console.log('Success', data)
+    },
   
-    const { data:stakeResult, isLoading2, isSuccess2, write:staking } = useContractWrite(stakeConfig)
-  
 
+  })
+
+
+
+
+    const { write } = useContractWrite({
+      
+      address: token1[1],
+      abi: token_abi,
+      functionName: 'approve',
+      args: [stake1_address.toString(),(stakeAmount*10**18).toString()],
+      onSuccess(data) {
+        staking?.()
+        console.log('Success', data)
+      },
+    
+    })
+
+
+    
+    // const { config:unstakeConfig } = usePrepareContractWrite({
+    //   address: stake1_address,
+    //   abi: stake1_abi,
+    //   functionName: 'unStake',
+    //   args: [slected_pair_inv?slected_pair_inv[3]:null,slected_plp_add],
+    
+    // })
+
+
+    // const { config:claimRewardConfig } = usePrepareContractWrite({
+    //   address: stake1_address,
+    //   abi: stake1_abi,
+    //   functionName: 'withdrawReward',
+    
+    // })
+    // const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
 
   const { data, isError1, isLoading1 } = useContractReads({
     contracts: [
@@ -153,11 +199,40 @@ const FirstBox = ({
               
   //  const balance =await  web3.eth.getBalance(address)
     const contract=new web3.eth.Contract(stake1_abi,stake1_address);
-    
+    let totalReward = await contract.methods.getReward().call({ from: address });       
+
     let allowed_tokens = await contract.methods.getAll_allowedTokens().call({from:address});    
     set_allowedTokens(allowed_tokens);
-    console.log("allowed_tokens "+allowed_tokens);
+    console.log("allowed_tokens "+allowed_tokens[1][1]);
+    for(let i=0;i < allowed_tokens.length;i++)
+    {
+       let temp  = await contract.methods.getAll_investments(allowed_tokens[i][1].toString()).call({from:address}); 
+   
+        // unstakeDetails.push(temp);
+        details.push(temp? temp :[]);
+        console.log("token add "+i +" "+allowed_tokens[i][1]);
+        console.log("details  "+i +" " +temp);
+
+    }
+    console.log("test unstake prrr "+ details);
+
+    set_unstakeDetails(details)
+    set_slected_plp_add(allowed_tokens[0][1])
+
+    console.log("test unstake "+ details[2][0]);
+
+    set_slected_pair(details[0])
+
+    set_slected_pair_inv(details[0][0])
+
     setToken1(allowed_tokens[0])
+
+    let Total_withdraw = await contract.methods.total_withdrawReward(address).call();       
+
+
+    set_totalReward(totalReward);
+    set_Total_withdraw(Total_withdraw);
+    
     // let Total_withdraw = await contract.methods.total_withdraw_reaward().call({ from: address });       
 
     // let allInvestments = await contract.methods.getAll_investments().call({from: address});
@@ -171,7 +246,7 @@ const FirstBox = ({
 
   } 
 
-  function stake()
+   async function stake()
   {
     if(isDisconnected)
     {
@@ -191,12 +266,35 @@ const FirstBox = ({
       alert("You dont have enough balance");
       return;
     }
+
+console.log("choosed stake token "+token1[1]);
+
     write?.()
-    staking?.();
+
 
   }
 
+  // function unstaking()
+  // {
+  //   if(isDisconnected)
+  //   {
+  //     alert("kindly connect your wallet ");
+  //     return;
+  //   }
+  //   console.log("object unstake "+slected_pair_inv);
+  //   if(slected_pair_inv==undefined)
+  //   {
+  //     alert("sorry")
+  //     return
+  //   }
+  //   console.log("object unstake1 "+slected_plp_add);
 
+  //   unstake?.()
+
+  //   // console.log(data__unstake);
+    
+
+  // }
 
 
 
@@ -356,6 +454,7 @@ const FirstBox = ({
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
                       value={stakeAmount}
+                      min={0}
                       max={token1?Number(token1[2])/10**18:0}
                       onChange={(e)=>setStakedAmount(e.target.value)}
                     />
@@ -439,11 +538,20 @@ const FirstBox = ({
                             onClick={(e) => {
                               setHide1(!hide1);
                               setToken1(item);
+                              
+                              set_slected_pair(unstakeDetails[index])
+                              set_slected_plp_add(item[1])
+                              set_slected_pair_inv(unstakeDetails[index][0])
+
+                              console.log(" todfken index "+ unstakeDetails[index]);
+
+                              console.log(" token index"+ unstakeDetails[2][0]);
+
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {token1[0]}
+                                {item[0]}
                               </span>
                             </div>
                           </div>
@@ -463,6 +571,7 @@ const FirstBox = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           setHide2(!hide2);
+
                         }}
                       >
                         <div className="slt flex items-center">
@@ -471,7 +580,7 @@ const FirstBox = ({
                               className="unit-eng flex items-center font s14 b4"
                               placeholder="Plano"
                             >
-                              {token2 ? token2.lbl : ""}
+                              {slected_pair_inv ? slected_pair_inv[0]/10**18 : ""}
                             </span>
                           </div>
                         </div>
@@ -485,18 +594,21 @@ const FirstBox = ({
                       className={`block flex aic abs ${hide2 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {slected_pair.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
                             onClick={(e) => {
                               setHide2(!hide2);
-                              setToken2(item);
+                              // setToken2(item);
+                              set_slected_pair_inv(item)
+                              set_choosed_Unstake_inv(item[3])
+
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                                {item[0]/10**18}
                               </span>
                             </div>
                           </div>
@@ -504,7 +616,7 @@ const FirstBox = ({
                       </div>
                     </div>
                   </div>
-                  <Timer />
+                  <Timer  time={slected_pair_inv ? Number(slected_pair_inv[1]): 0}/>
                 </div>
               </div>
             </div>
@@ -532,11 +644,11 @@ const FirstBox = ({
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">$1000.00</h1>
+                  <h1 className="item-lbl text-white">${Number(Total_withdraw)+Number(totalReward)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">$100</h1>
+                  <h1 className="item-lbl text-white">${Number(totalReward)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -554,18 +666,18 @@ const FirstBox = ({
                         }}
                       >
                         <div className="slt flex items-center">
-                          <div className="icon flex items-center justify-center">
+                          {/* <div className="icon flex items-center justify-center">
                             <img
                               src={token3 ? token3.img : "/images/btc.png"}
                               className="img"
                             />
-                          </div>
+                          </div> */}
                           <div className="unit-name flex aic font s14 b4">
                             <span
                               className="unit-eng flex aic font s14 b4"
                               placeholder="Plano"
                             >
-                              {token3 ? token3.lbl : ""}
+                              {token3 ? token3[0] : ""}
                             </span>
                           </div>
                         </div>
@@ -579,18 +691,21 @@ const FirstBox = ({
                       className={`block flex aic abs ${hide3 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {allowedTokens.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
                             onClick={(e) => {
                               setHide3(!hide3);
                               setToken3(item);
+
+                              set_slected_pair(unstakeDetails[index])
+                              set_slected_pair_inv(unstakeDetails[index][0])
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                                {item[0]}
                               </span>
                             </div>
                           </div>
@@ -618,7 +733,7 @@ const FirstBox = ({
                               className="unit-eng flex items-center font s14 b4"
                               placeholder="Plano"
                             >
-                              {token4 ? token4.lbl : ""}
+                              {slected_pair_inv ? slected_pair_inv[0]/10**18 : ""}
                             </span>
                           </div>
                         </div>
@@ -632,18 +747,20 @@ const FirstBox = ({
                       className={`block flex aic abs ${hide4 ? "show" : ""}`}
                     >
                       <div className="manue flex aic col anim">
-                        {tokensList.map((item, index) => (
+                        {slected_pair.map((item, index) => (
                           <div
                             key={index}
                             className="slt flex aic"
                             onClick={(e) => {
                               setHide4(!hide4);
                               setToken4(item);
+                              set_slected_pair_inv(item)
+
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
                               <span className="unit-eng flex aic font s14 b4">
-                                {item.lbl}
+                                {item[0]/10**18}
                               </span>
                             </div>
                           </div>
@@ -653,7 +770,7 @@ const FirstBox = ({
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">$700.00</span>
+                    Earning : <span className="c-theme">${slected_pair_inv?slected_pair_inv[6]:0}</span>
                     </h1>
                   </div>
                 </div>
@@ -674,11 +791,15 @@ const FirstBox = ({
                 </div>
               </div>
             </div>
-            <button className="btn-stack button">Unstake</button>
+            <button className="btn-stack button">Claim</button>
           </div>
           <BodyBottom />
         </div>
       ) : null}
+                    <Modal open={open} onClose={() => setOpen(false)}>
+          {/* <ConfirmationPopup setOpen={setOpen} unstaking={unstaking}/> */}
+        </Modal>
+      {/* {unstakeDetails?unstakeDetails[0][0][0]:0} */}
     </div>
   );
 };
