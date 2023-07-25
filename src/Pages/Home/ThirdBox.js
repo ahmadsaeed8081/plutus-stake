@@ -66,18 +66,37 @@ const ThirdBox = ({
 
   // console.log(typeOf(address));
 
-  const { config } = usePrepareContractWrite({
-    address: Stake3_token_Address,
-    abi: token_abi,
-    functionName: 'approve',
-    args: [stake3_address,stakeAmount*10**18]
-  })
-  const { config:stakeConfig } = usePrepareContractWrite({
+  const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+
     address: stake3_address,
-    abi: stake2_3_abi,
-    functionName: 'Stake',
-    args: [stakeAmount*10**18],
-    value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+  abi: stake2_3_abi,
+  functionName: 'Stake',
+  args: [stakeAmount*10**18],
+  value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+  onSuccess(data) {
+    test();
+    console.log('Success', data)
+  },
+
+
+})
+
+
+
+
+  const { write } = useContractWrite({
+    
+
+    address: Stake3_token_Address,
+  abi: token_abi,
+    functionName: 'approve',
+    args: [stake3_address,stakeAmount*10**18],
+    onSuccess(data) {
+      staking?.()
+      console.log('Success', data)
+    },
+  
+  })
 
     const { config:unstakeConfig } = usePrepareContractWrite({
       address: stake3_address,
@@ -96,10 +115,8 @@ const ThirdBox = ({
     })
 
 
-  const { data1, isLoading, isSuccess, write } = useContractWrite(config)
   const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
 
-  const { data:stakeResult, isLoading2, isSuccess2, write:staking } = useContractWrite(stakeConfig)
 
   const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
 
@@ -228,7 +245,6 @@ useEffect(()=>{
       return;
     }
     write?.()
-    staking?.();
 
   }
 
@@ -399,6 +415,7 @@ useEffect(()=>{
                       type="number"
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
+                      min={0}
                       value={stakeAmount}
                       max={data?(Number(data[8].result)/10**18):0}
                       onChange={(e)=>setStakedAmount(e.target.value)}
@@ -586,7 +603,7 @@ useEffect(()=>{
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]:0}</span>
+                      Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]/10**18:0}</span>
                     </h1>
                   </div>
                 </div>

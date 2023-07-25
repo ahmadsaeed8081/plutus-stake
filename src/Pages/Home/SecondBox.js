@@ -59,18 +59,53 @@ const SecondBox = ({
 
   // console.log(typeOf(address));
 
-  const { config } = usePrepareContractWrite({
-    address: Stake2_token_Address,
-    abi: token_abi,
-    functionName: 'approve',
-    args: [stake2_address,stakeAmount*10**18]
-  })
-  const { config:stakeConfig } = usePrepareContractWrite({
-    address: stake2_address,
+  // const { config } = usePrepareContractWrite({
+  //   address: Stake2_token_Address,
+  //   abi: token_abi,
+  //   functionName: 'approve',
+  //   args: [stake2_address,stakeAmount*10**18]
+  // })
+  
+  // const { config:stakeConfig } = usePrepareContractWrite({
+  //   address: stake2_address,
+  //   abi: stake2_3_abi,
+  //   functionName: 'Stake',
+  //   args: [stakeAmount*10**18],
+  //   value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+
+
+
+    const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+
+      address: stake2_address,
     abi: stake2_3_abi,
     functionName: 'Stake',
     args: [stakeAmount*10**18],
-    value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+    value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+    onSuccess(data) {
+      test();
+      console.log('Success', data)
+    },
+  
+
+  })
+
+
+
+
+    const { write } = useContractWrite({
+      
+
+      address: Stake2_token_Address,
+    abi: token_abi,
+      functionName: 'approve',
+      args: [stake2_address,stakeAmount*10**18],
+      onSuccess(data) {
+        staking?.()
+        console.log('Success', data)
+      },
+    
+    })
 
     const { config:unstakeConfig } = usePrepareContractWrite({
       address: stake2_address,
@@ -89,10 +124,8 @@ const SecondBox = ({
     })
 
 
-  const { data1, isLoading, isSuccess, write } = useContractWrite(config)
   const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
 
-  const { data:stakeResult, isLoading2, isSuccess:stake_sucuss, write:staking } = useContractWrite(stakeConfig)
 
   const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
 
@@ -218,12 +251,7 @@ useEffect(()=>{
       return;
     }
     write?.()
-    staking?.();
-if(stake_sucuss)
-{
-  alert("stake success")
-  window.location.reload()
-}
+
 
   }
 
@@ -359,7 +387,7 @@ console.log(data?data[3].result:null);
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">APY:</h1>
-                  <h1 className="item-lbl text-white">{data?(Number(data[0].result)):("0")}%/</h1>
+                  <h1 className="item-lbl text-white">30%</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">
@@ -381,6 +409,7 @@ console.log(data?data[3].result:null);
                       type="number"
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
+                      min={0}
                       value={stakeAmount}
                       max={data?(Number(data[8].result)/10**18):0}
 
@@ -572,7 +601,7 @@ console.log(data?data[3].result:null);
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]:0}</span>
+                    Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]/10**18:0}</span>
                     </h1>
                   </div>
                 </div>

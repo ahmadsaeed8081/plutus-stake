@@ -104,7 +104,7 @@ const FirstBox = ({
       address: token1[1],
       abi: token_abi,
       functionName: 'approve',
-      args: [stake1_address.toString(),(stakeAmount*10**18).toString()],
+      args: [stake1_address,stakeAmount*10**18],
       onSuccess(data) {
         staking?.()
         console.log('Success', data)
@@ -114,22 +114,23 @@ const FirstBox = ({
 
 
     
-    // const { config:unstakeConfig } = usePrepareContractWrite({
-    //   address: stake1_address,
-    //   abi: stake1_abi,
-    //   functionName: 'unStake',
-    //   args: [slected_pair_inv?slected_pair_inv[3]:null,slected_plp_add],
+    const { config:unstakeConfig } = usePrepareContractWrite({
+      address: stake1_address,
+      abi: stake1_abi,
+      functionName: 'unStake',
+      args: [slected_pair_inv?slected_pair_inv[3]:null,slected_plp_add],
     
-    // })
+    })
 
 
-    // const { config:claimRewardConfig } = usePrepareContractWrite({
-    //   address: stake1_address,
-    //   abi: stake1_abi,
-    //   functionName: 'withdrawReward',
+    const { config:claimRewardConfig } = usePrepareContractWrite({
+      address: stake1_address,
+      abi: stake1_abi,
+      functionName: 'withdrawReward',
     
-    // })
-    // const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
+    })
+    const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
+    const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
 
   const { data, isError1, isLoading1 } = useContractReads({
     contracts: [
@@ -226,6 +227,8 @@ const FirstBox = ({
     set_slected_pair_inv(details[0][0])
 
     setToken1(allowed_tokens[0])
+    setToken3(allowed_tokens[0])
+
 
     let Total_withdraw = await contract.methods.total_withdrawReward(address).call();       
 
@@ -274,28 +277,51 @@ console.log("choosed stake token "+token1[1]);
 
   }
 
-  // function unstaking()
-  // {
-  //   if(isDisconnected)
-  //   {
-  //     alert("kindly connect your wallet ");
-  //     return;
-  //   }
-  //   console.log("object unstake "+slected_pair_inv);
-  //   if(slected_pair_inv==undefined)
-  //   {
-  //     alert("sorry")
-  //     return
-  //   }
-  //   console.log("object unstake1 "+slected_plp_add);
+  function unstaking()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    console.log("object unstake "+slected_pair_inv);
+    if(slected_pair_inv==undefined)
+    {
+      // alert("sorry")
+      return
+    }
+    console.log("object unstake1 "+slected_plp_add);
 
-  //   unstake?.()
+    unstake?.()
 
-  //   // console.log(data__unstake);
+    // console.log(data__unstake);
     
 
-  // }
+  }
 
+  function ClaimReward()
+  {
+    if(isDisconnected)
+    {
+      alert("kindly connect your wallet ");
+      return;
+    }
+    if(totalReward==0 )
+    {
+      alert("You dont have reward to withdraw");
+      return;
+    }
+
+
+    // if(Number(data[10].result) < Number(fee))
+    // {
+    //   alert("You dont have enough balance");
+    //   return;
+    // }
+    withdrawReward?.()
+    
+
+  }
 
 
 
@@ -453,8 +479,8 @@ console.log("choosed stake token "+token1[1]);
                       type="number"
                       className="txt cleanbtn w-full"
                       placeholder="Amount"
-                      value={stakeAmount}
                       min={0}
+                      value={stakeAmount}
                       max={token1?Number(token1[2])/10**18:0}
                       onChange={(e)=>setStakedAmount(e.target.value)}
                     />
@@ -791,13 +817,13 @@ console.log("choosed stake token "+token1[1]);
                 </div>
               </div>
             </div>
-            <button className="btn-stack button">Claim</button>
+            <button className="btn-stack button" onClick={ClaimReward}>Claim</button>
           </div>
           <BodyBottom />
         </div>
       ) : null}
                     <Modal open={open} onClose={() => setOpen(false)}>
-          {/* <ConfirmationPopup setOpen={setOpen} unstaking={unstaking}/> */}
+          <ConfirmationPopup setOpen={setOpen} unstaking={unstaking}/>
         </Modal>
       {/* {unstakeDetails?unstakeDetails[0][0][0]:0} */}
     </div>

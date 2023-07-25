@@ -63,7 +63,7 @@ const Main = () => {
   const [token7, setToken7] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const [token8, setToken8] = useState({ img: "/images/btc.png", lbl: "BTC" });
   const tokensList = [
-    { img: "/images/btc.png", lbl: "PLUTUS/BTC", },
+    { img: "/images/btc.png", lbl: "PLUTUS/BTC"},
     { img: "/images/usdt.png", lbl: "PLUTUS/USDT" },
     { img: "/images/trx.png", lbl: "PLUTUS/BUSD" },
     { img: "/images/btcoin.png", lbl: "PLUTUS/BTC" },
