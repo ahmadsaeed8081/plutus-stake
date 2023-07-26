@@ -18,7 +18,7 @@ const Routing = ({ Component, pageProps }) => {
   const chains = [polygonMumbai]
 const projectId = '9dc66ab4d76b28b1a452d5dc0083e466'
 
-const { publicClient } = configureChains(chains, [alchemyProvider({ apiKey: 'sfF2uEV_-8jwfwQ4lLO-FdJEv91GnIII' })])
+const { publicClient } = configureChains(chains, [w3mProvider({ projectId })])
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: w3mConnectors({ projectId, chains }),
