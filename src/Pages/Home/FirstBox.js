@@ -203,7 +203,12 @@ const FirstBox = ({
 
     ],
   })
-
+  function Convert_To_eth( val){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+    val= web3.utils.fromWei(val.toString(),"ether");
+    return val;
+  
+  }
 
   function Convert_To_Wei( val){
     const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
