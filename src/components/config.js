@@ -1,6 +1,6 @@
-export const stake1_address="0xd9216Ece51A68B9f73398F2599C854AFb4077b47";
-export const stake2_address="0x2607529Cd82a88bA4069Ed1d8b5326102DcF3fe3";
-export const stake3_address="0x2607529Cd82a88bA4069Ed1d8b5326102DcF3fe3";
+export const stake1_address="0x313fE22C41C731C8c75F103D6750E05EE1158C72";
+export const stake2_address="0x9F131d132bc32A750305Af2C5c22decfbCf9B025";
+export const stake3_address="0x9F131d132bc32A750305Af2C5c22decfbCf9B025";
 export  const Stake2_token_Address="0x33b0E5AB94132AF35F1B174bd28d12bB04FB8Ed8";
 export  const Stake3_token_Address="0x33b0E5AB94132AF35F1B174bd28d12bB04FB8Ed8";
 
@@ -388,6 +388,19 @@ export const stake1_abi=[
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "per_day_divider",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",

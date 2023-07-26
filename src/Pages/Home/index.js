@@ -106,7 +106,7 @@ const Main = () => {
       <div className="lading-page bg-themeColor h-screen flex">
         <div className="wrap wrapWidth flex flex-col text-white">
           <div className="page-meta flex flex-col items-center">
-            <h1 className="slug">Stake Pool</h1>
+            <h1 className="slug">Staking Pools</h1>
             <p className="desc">Stake LP tokens and earn Incentive token</p>
           </div>
           <div className="page-grid">

@@ -9,7 +9,7 @@ import {
 import Modal from "../../components/Modal";
 
 import { stake1_address,stake1_abi,token_abi,Stake2_token_Address } from "../../components/config";
-import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite } from 'wagmi'
+import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 import ConfirmationPopup from "../../components/confirmationPopup";
 
 import { useAccount, useDisconnect } from 'wagmi'
@@ -61,6 +61,7 @@ const FirstBox = ({
   const [Total_withdraw, set_Total_withdraw] = useState(0);
   const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
   const [slected_plp_add, set_slected_plp_add] = useState("");
+  const [curr_time, set_currTime] = useState(0);
 
   let details=[];
   let count=0;
@@ -76,8 +77,22 @@ const FirstBox = ({
   },address)
 
 
+  const { config:appConfig } = usePrepareContractWrite({
+    address: token1[1],
+    abi: token_abi,
+    functionName: 'approve',
+    args: [stake1_address,stakeAmount*10**18],
+  })
 
 
+  // const { config: stakeConfig } = usePrepareContractWrite({
+  //   address: stake1_address,
+  //   abi: stake1_abi,
+  //   functionName: 'Stake',
+  //   args: [token1[1],stakeAmount*10**18],
+  //   value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+
+  // })
 
 
   
@@ -87,9 +102,9 @@ const FirstBox = ({
     abi: stake1_abi,
     functionName: 'Stake',
     args: [token1[1],stakeAmount*10**18],
-    value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+    value: Convert_To_Wei(((stakeAmount)*0.3/100)),
     onSuccess(data) {
-      test();
+      // test();
       console.log('Success', data)
     },
   
@@ -99,18 +114,18 @@ const FirstBox = ({
 
 
 
-    const { write } = useContractWrite({
+    // const { write } = useContractWrite({
       
-      address: token1[1],
-      abi: token_abi,
-      functionName: 'approve',
-      args: [stake1_address,stakeAmount*10**18],
-      onSuccess(data) {
-        staking?.()
-        console.log('Success', data)
-      },
+    //   address: token1[1],
+    //   abi: token_abi,
+    //   functionName: 'approve',
+    //   args: [stake1_address,stakeAmount*10**18],
+    //   onMutate({ args, overrides }) {
+    //     staking?.()
+    //     console.log('Success', data)
+    //   },
     
-    })
+    // })
 
 
     
@@ -119,7 +134,7 @@ const FirstBox = ({
       abi: stake1_abi,
       functionName: 'unStake',
       args: [slected_pair_inv?slected_pair_inv[3]:null,slected_plp_add],
-    
+
     })
 
 
@@ -129,58 +144,53 @@ const FirstBox = ({
       functionName: 'withdrawReward',
     
     })
+    const {data:data_app, isLoading:isLoading_app, isSuccess:isSuccess_app,write: approval} = useContractWrite(appConfig)
+
+    // const { data:data__stake, isLoading:isLoading_stake, isSuccess:isSuccess_stake, write: staking  } = useContractWrite(stakeConfig)
+
     const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
     const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
+
+
+    const waitForTransaction = useWaitForTransaction({
+      hash: data_app?.hash,
+      onSuccess(data) {
+      staking?.()
+        console.log('Success',data )
+      },
+    })
+
+
+    const waitForTransaction2 = useWaitForTransaction({
+      hash: stakeResult?.hash,
+      onSuccess(data) {
+      test?.()
+        console.log('Success2',data )
+      },
+    })
+
+    const waitForTransaction3 = useWaitForTransaction({
+      hash: data__unstake?.hash,
+      onSuccess(data) {
+      test?.()
+        console.log('Success2',data )
+      },
+    })
+
+    const waitForTransaction4 = useWaitForTransaction({
+      hash: stakeResult_withdrawReward?.hash,
+      onSuccess(data) {
+      test?.()
+        console.log('Success2',data )
+      },
+    })
 
   const { data, isError1, isLoading1 } = useContractReads({
     contracts: [
       {
         ...stake2_Contract,
-        functionName: 'Apy',
+        functionName: 'get_currTime',
       },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'getTotalInvestment',
-
-      // },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'get_currTime',
-        
-      // },
-
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'owner',
-        
-      // },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'totalusers',
-        
-      // },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'totalbusiness',
-        
-      // },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'user',
-      //   args:[address]
-        
-      // },
-      // {
-      //   ...stake2_Contract,
-      //   functionName: 'get_withdrawnTime',
-      //   args: [1]
-        
-      // },
-
-
-
-
-
       {
         ...stakeTokem_Contract,
         functionName: 'balanceOf',
@@ -194,6 +204,14 @@ const FirstBox = ({
     ],
   })
 
+
+  function Convert_To_Wei( val){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+    val= web3.utils.toWei(val.toString(),"ether");
+    return val;
+  
+  }
+  
   async function test(){
     const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
   
@@ -201,6 +219,7 @@ const FirstBox = ({
   //  const balance =await  web3.eth.getBalance(address)
     const contract=new web3.eth.Contract(stake1_abi,stake1_address);
     let totalReward = await contract.methods.getReward().call({ from: address });       
+    let curr_time = await contract.methods.get_currTime().call();    
 
     let allowed_tokens = await contract.methods.getAll_allowedTokens().call({from:address});    
     set_allowedTokens(allowed_tokens);
@@ -232,6 +251,7 @@ const FirstBox = ({
 
     let Total_withdraw = await contract.methods.total_withdrawReward(address).call();       
 
+    set_currTime(curr_time);
 
     set_totalReward(totalReward);
     set_Total_withdraw(Total_withdraw);
@@ -249,7 +269,7 @@ const FirstBox = ({
 
   } 
 
-   async function stake()
+    function stake()
   {
     if(isDisconnected)
     {
@@ -272,10 +292,20 @@ const FirstBox = ({
 
 console.log("choosed stake token "+token1[1]);
 
-    write?.()
+approval?.()
 
 
   }
+
+//   async function stake1()
+//   {
+
+// console.log("choosed stake1 token ");
+
+// staking?.()
+
+
+//   }
 
   function unstaking()
   {
@@ -342,16 +372,41 @@ console.log("choosed stake token "+token1[1]);
         <div className={`expend-detail flex flex-col ${expend ? "show" : ""}`}>
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side">Total Liquidity:</div>
-            <div className="val-side">$60,327971</div>
+            <div className="val-side" >                 
+            $60,327971
+
+                  
+                  </div>
           </div>
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
-            <div className="val-side">Get Plutus/PRC20</div>
+            <div className="val-side">
+            <a
+                    href="https://www.plutus.exchange/whitepaper"
+                    target="_blank"
+                    className="sub-menu-item"
+                    style={{ color:"#2498A3" }}
+                  >
+                    Get Plutus/PRC20
+                  </a>
+              
+              </div>
           </div>
 
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
-            <div className="val-side">View Contract</div>
+            <div className="val-side">
+            <a
+                    href="https://www.plutus.exchange/whitepaper"
+                    target="_blank"
+                    className="sub-menu-item"
+                    style={{ color:"#2498A3" }}
+                  >
+                    View Contract
+                  </a>
+              
+              
+              </div>
           </div>
         </div>
       </div>
@@ -485,7 +540,7 @@ console.log("choosed stake token "+token1[1]);
                       onChange={(e)=>setStakedAmount(e.target.value)}
                     />
                     <div className="ib-right flex items-center">
-                      <h1 className="ib-txt">LPT</h1>
+                      <h1 className="ib-txt">PLP</h1>
                       <button className="ib-btn button"onClick={(e)=>setStakedAmount((Number(token1[2])/10**18))}>Max</button>
                     </div>
                   </div>
@@ -646,9 +701,20 @@ console.log("choosed stake token "+token1[1]);
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={(e) => setOpen(true)}>
-              Unstake
-            </button>
+            {
+              slected_pair_inv?(
+                <button className="btn-stack button" onClick={(e) =>{slected_pair_inv && Number(curr_time)>Number(slected_pair_inv[1])?(setOpen(true)):staking()} }>
+                Unstake
+              </button>
+
+              ):(
+                <button className="btn-stack button">
+                Unstake
+              </button>
+              )
+
+            }
+
           </div>
           <BodyBottom />
         </div>
@@ -670,11 +736,11 @@ console.log("choosed stake token "+token1[1]);
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">${Number(Total_withdraw)+Number(totalReward)}</h1>
+                  <h1 className="item-lbl text-white">${((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">${Number(totalReward)}</h1>
+                  <h1 className="item-lbl text-white">${(Number(totalReward)/10**18).toFixed(2)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -796,11 +862,11 @@ console.log("choosed stake token "+token1[1]);
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                    Earning : <span className="c-theme">${slected_pair_inv?slected_pair_inv[6]:0}</span>
+                    Earning : <span className="c-theme">${slected_pair_inv?(slected_pair_inv[6]/10**18).toFixed(2):0}</span>
                     </h1>
                   </div>
                 </div>
-                <div className="input-field flex flex-col">
+                {/* <div className="input-field flex flex-col">
                   <div className="field-hdr flex items-center justify-between">
                     <h1 className="f-tag">Claim Reward:</h1>
                   </div>
@@ -814,7 +880,7 @@ console.log("choosed stake token "+token1[1]);
                       <button className="ib-btn button">Max</button>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
             <button className="btn-stack button" onClick={ClaimReward}>Claim</button>

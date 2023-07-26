@@ -12,7 +12,7 @@ import ConfirmationPopup from "../../components/confirmationPopup";
 import Web3 from "web3";
 import { useAccount, useDisconnect } from 'wagmi'
 import { stake1_address,stake2_address,stake3_address,stake1_abi,stake2_3_abi,token_abi,Stake2_token_Address } from "../../components/config";
-import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite } from 'wagmi'
+import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 const stake2_Contract = {
   address: stake2_address,
   abi: stake2_3_abi,
@@ -81,7 +81,7 @@ const SecondBox = ({
     abi: stake2_3_abi,
     functionName: 'Stake',
     args: [stakeAmount*10**18],
-    value: ((stakeAmount*0.3/100) * (10**18)).toString(),
+    value: Convert_To_Wei((stakeAmount*0.3/100)),
     onSuccess(data) {
       test();
       console.log('Success', data)
@@ -90,22 +90,15 @@ const SecondBox = ({
 
   })
 
-
-
-
-    const { write } = useContractWrite({
-      
-
-      address: Stake2_token_Address,
+  const { config:appConfig } = usePrepareContractWrite({
+    address: Stake2_token_Address,
     abi: token_abi,
       functionName: 'approve',
       args: [stake2_address,stakeAmount*10**18],
-      onSuccess(data) {
-        staking?.()
-        console.log('Success', data)
-      },
-    
-    })
+  })
+
+
+
 
     const { config:unstakeConfig } = usePrepareContractWrite({
       address: stake2_address,
@@ -123,11 +116,46 @@ const SecondBox = ({
     
     })
 
+    const {data:data_app, isLoading:isLoading_app, isSuccess:isSuccess_app,write: approval} = useContractWrite(appConfig)
 
   const { data:data__unstake, isLoading:isLoading_unstake, isSuccess:isSuccess_unstake, write:unstake } = useContractWrite(unstakeConfig)
 
 
   const { data:stakeResult_withdrawReward, isLoading2_withdrawReward, isSuccess2_withdrawReward, write:withdrawReward } = useContractWrite(claimRewardConfig)
+
+
+  const waitForTransaction = useWaitForTransaction({
+    hash: data_app?.hash,
+    onSuccess(data) {
+    // alert("its run")
+    staking?.()
+      console.log('Success',data )
+    },
+  })
+
+  const waitForTransaction2 = useWaitForTransaction({
+    hash: stakeResult?.hash,
+    onSuccess(data) {
+    test?.()
+      console.log('Success2',data )
+    },
+  })
+
+  const waitForTransaction3 = useWaitForTransaction({
+    hash: data__unstake?.hash,
+    onSuccess(data) {
+    test?.()
+      console.log('Success2',data )
+    },
+  })
+
+  const waitForTransaction4 = useWaitForTransaction({
+    hash: stakeResult_withdrawReward?.hash,
+    onSuccess(data) {
+    test?.()
+      console.log('Success2',data )
+    },
+  })
 
 useEffect(()=>{
   let count=0;
@@ -201,7 +229,18 @@ useEffect(()=>{
   })
 
 
-
+  function Convert_To_Wei( val){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+    val= web3.utils.toWei(val.toString(),"ether");
+    return val;
+  
+  }
+  function Convert_To_eth( val){
+    const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
+    val= web3.utils.fromWei(val.toString(),"ether");
+    return val;
+  
+  }
   
   async function test(){
     const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
@@ -250,7 +289,7 @@ useEffect(()=>{
       alert("You dont have enough balance");
       return;
     }
-    write?.()
+    approval?.()
 
 
   }
@@ -308,6 +347,7 @@ useEffect(()=>{
 
   }
 
+  // setInterval( test, 60000);
 
 
   console.log(data);
@@ -331,15 +371,41 @@ console.log(data?data[3].result:null);
         <div className={`expend-detail flex flex-col ${expend ? "show" : ""}`}>
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side">Total Liquidity:</div>
-            <div className="val-side">$60,327971</div>
+            <div className="val-side" >                 
+            $60,327971
+
+                  
+                  </div>
           </div>
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
-            <div className="val-side">Get wPLS/WBTC</div>
+            <div className="val-side">
+            <a
+                    href="https://www.plutus.exchange/whitepaper"
+                    target="_blank"
+                    className="sub-menu-item"
+                    style={{ color:"#2498A3" }}
+                  >
+                    Get wPLS/WBTC
+                  </a>
+              
+              </div>
           </div>
+
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
-            <div className="val-side">View Contract</div>
+            <div className="val-side">
+            <a
+                    href="https://www.plutus.exchange/whitepaper"
+                    target="_blank"
+                    className="sub-menu-item"
+                    style={{ color:"#2498A3" }}
+                  >
+                    View Contract
+                  </a>
+              
+              
+              </div>
           </div>
         </div>
       </div>
@@ -401,7 +467,7 @@ console.log(data?data[3].result:null);
                   <div className="field-hdr flex items-center justify-between">
                     <h1 className="f-tag">Select Amount:</h1>
                     <h1 className="f-tag">
-                    Balance: <span className="font-semibold">{data?(Number(data[8].result)/10**18):0} PLP</span>
+                    Balance: <span className="font-semibold">{data?(Number(data[8].result)/10**18).toFixed(2):0} PLP</span>
                     </h1>
                   </div>
                   <div className="field-i-box flex items-center">
@@ -536,11 +602,11 @@ console.log(data?data[3].result:null);
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">${Number(Total_withdraw)+Number(totalReward)}</h1>
+                  <h1 className="item-lbl text-white">${((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">${Number(totalReward)}</h1>
+                  <h1 className="item-lbl text-white">${(Number(totalReward)/10**18).toFixed(2)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -601,7 +667,7 @@ console.log(data?data[3].result:null);
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                    Earning : <span className="c-theme">${selectedAmount?selectedAmount[6]/10**18:0}</span>
+                    Earning : <span className="c-theme">${(selectedAmount? Convert_To_eth(selectedAmount[6]):0)}</span>
                     </h1>
                   </div>
                 </div>
