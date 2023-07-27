@@ -7,10 +7,11 @@ import {
   ArrowUpIcon,
 } from "../../assets/Icons";
 import Modal from "../../components/Modal";
-
+import ConnectWallet from "../../components/ConnectWallet";
 import { stake1_address,stake1_abi,token_abi,Stake2_token_Address } from "../../components/config";
 import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
 import ConfirmationPopup from "../../components/confirmationPopup";
+import {useNetwork,  useSwitchNetwork } from 'wagmi'
 
 import { useAccount, useDisconnect } from 'wagmi'
 
@@ -50,6 +51,7 @@ const FirstBox = ({
 }) => {
   const { address, isConnecting ,isDisconnected} = useAccount()
   const [open, setOpen] = useState(false);
+  const [openConnectWallet, setOpenConnectWallet] = useState(false);
 
   const [expend, setExpend] = useState(false);
   const [allowedTokens, set_allowedTokens] = useState([]);
@@ -60,20 +62,25 @@ const FirstBox = ({
   const [totalReward, set_totalReward] = useState(0);
   const [Total_withdraw, set_Total_withdraw] = useState(0);
   const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
+  const [count1, set_count1] = useState(0);
+
   const [slected_plp_add, set_slected_plp_add] = useState("");
   const [curr_time, set_currTime] = useState(0);
+  const { chain } = useNetwork()
 
   let details=[];
   let count=0;
-
+  const networkId=80001;
+  // let count1=0;
 
   useEffect(()=>{
     if(count==0&& address!=undefined)
     {
         test()
         count++;
-    }
-  
+
+
+}
   },address)
 
 
@@ -82,6 +89,7 @@ const FirstBox = ({
     abi: token_abi,
     functionName: 'approve',
     args: [stake1_address,stakeAmount*10**18],
+    chainId:80001
   })
 
 
@@ -96,7 +104,7 @@ const FirstBox = ({
 
 
   
-    const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+    const { data:stakeResult, isLoading:isLoading_stake, isSuccess:stakeSuccess, write:staking } = useContractWrite({
 
       address: stake1_address,
     abi: stake1_abi,
@@ -110,6 +118,7 @@ const FirstBox = ({
   
 
   })
+
 
 
 
@@ -203,6 +212,39 @@ const FirstBox = ({
 
     ],
   })
+
+  const {switchNetwork:stake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        approval?.()
+      }
+
+    })
+    const { switchNetwork:unstake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        unstake?.()
+      }
+
+    })
+    const { chains, error, isLoading, pendingChainId, switchNetwork:reward_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        withdrawReward?.()
+      }
+
+    })
+
+
   function Convert_To_eth( val){
     const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
     val= web3.utils.fromWei(val.toString(),"ether");
@@ -294,40 +336,41 @@ const FirstBox = ({
       alert("You dont have enough balance");
       return;
     }
+    if(chain.id!=networkId)
+    {
+      stake_switch?.();
+    }else{
+      approval?.()
 
-console.log("choosed stake token "+token1[1]);
+    }
 
-approval?.()
+
 
 
   }
 
-//   async function stake1()
-//   {
 
-// console.log("choosed stake1 token ");
-
-// staking?.()
-
-
-//   }
 
   function unstaking()
   {
+    console.log("object");
     if(isDisconnected)
     {
       alert("kindly connect your wallet ");
       return;
     }
-    console.log("object unstake "+slected_pair_inv);
     if(slected_pair_inv==undefined)
     {
-      // alert("sorry")
       return
     }
-    console.log("object unstake1 "+slected_plp_add);
+    // console.log("object unstake1 "+slected_plp_add);
+    if(chain.id!=networkId)
+    {
+      unstake_switch?.();
+    }else{
+      unstake?.()
 
-    unstake?.()
+    }
 
     // console.log(data__unstake);
     
@@ -347,13 +390,16 @@ approval?.()
       return;
     }
 
+    console.log("object withdraw ");
 
-    // if(Number(data[10].result) < Number(fee))
-    // {
-    //   alert("You dont have enough balance");
-    //   return;
-    // }
-    withdrawReward?.()
+
+    if(chain.id!=networkId)
+    {
+      reward_switch?.();
+    }else{
+      withdrawReward?.()
+
+    }
     
 
   }
@@ -375,14 +421,14 @@ approval?.()
           </div>
         </div>
         <div className={`expend-detail flex flex-col ${expend ? "show" : ""}`}>
-          <div className="detail-item flex items-center justify-between">
+          {/* <div className="detail-item flex items-center justify-between">
             <div className="lbl-side">Total Liquidity:</div>
             <div className="val-side" >                 
             $60,327971
 
                   
                   </div>
-          </div>
+          </div> */}
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
             <div className="val-side">
@@ -418,7 +464,10 @@ approval?.()
     );
   };
   return (
+
+    
     <div className="grid-box flex flex-col">
+
       <div className="box-header flex items-center">
         {headerTabsList.map((item, index) => (
           <div
@@ -446,7 +495,7 @@ approval?.()
         >
           {boxNumb !== 1 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s1.png" className="img" />
+            <img src="/images/PRC20s.png" className="img1" />
             <h1 className="top-tag">Plutus/PRC20</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -552,7 +601,16 @@ approval?.()
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={stake}>Stake Now</button>
+            {
+                <button disabled={isLoading_app || isLoading_stake } className="btn-stack button" onClick={stake}> 
+                 {!isLoading_stake  && !isLoading_app &&! isSuccess_app && !stakeSuccess &&<div>Approve</div>}
+                  {isLoading_app && <div>Approving</div>}
+                  {!stakeSuccess && !isLoading_stake && isSuccess_app && <div>Approved</div>}
+                  {isLoading_stake && <div>Staking</div>}
+                  {!isLoading_app && stakeSuccess && <div>Approve</div>}
+                  </button>
+               
+            }
           </div>
           <BodyBottom />
         </div>
@@ -566,7 +624,7 @@ approval?.()
         >
           {boxNumb !== 1 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s1.png" className="img" />
+          <img src="/images/PRC20s.png" className="img1" />
             <h1 className="top-tag">Plutus/PRC20</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -708,9 +766,15 @@ approval?.()
             </div>
             {
               slected_pair_inv?(
-                <button className="btn-stack button" onClick={(e) =>{slected_pair_inv && Number(curr_time)>Number(slected_pair_inv[1])?(setOpen(true)):staking()} }>
-                Unstake
+                <button className="btn-stack button" disabled={isLoading_unstake} onClick={(e) =>{slected_pair_inv && Number(curr_time)>Number(slected_pair_inv[1])?(setOpen(true)):unstaking()} }>
+                  {!isLoading_unstake  && !isSuccess_unstake &&<div>Unstake</div>}
+                  {isLoading_unstake && !isSuccess_unstake && <div>Loading...</div>}
+                  {!isLoading_unstake && isSuccess_unstake && <div>Unstake</div>}
+
               </button>
+
+
+
 
               ):(
                 <button className="btn-stack button">
@@ -733,7 +797,7 @@ approval?.()
         >
           {boxNumb !== 1 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s1.png" className="img" />
+          <img src="/images/PRC20s.png" className="img1" />
             <h1 className="top-tag">Plutus/PRC20</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -741,11 +805,11 @@ approval?.()
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">${((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{((Number(Total_withdraw)+Number(totalReward))/10**18)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">${(Number(totalReward)/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{(Number(totalReward)/10**18)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -798,6 +862,7 @@ approval?.()
 
                               set_slected_pair(unstakeDetails[index])
                               set_slected_pair_inv(unstakeDetails[index][0])
+                              console.log("select rew "+slected_pair_inv[6]);
                             }}
                           >
                             <div className="unit-name flex aic font s14 b4">
@@ -852,6 +917,8 @@ approval?.()
                               setHide4(!hide4);
                               setToken4(item);
                               set_slected_pair_inv(item)
+                              console.log("select rew "+item[6]);
+
 
                             }}
                           >
@@ -867,7 +934,7 @@ approval?.()
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                    Earning : <span className="c-theme">${slected_pair_inv?(slected_pair_inv[6]/10**18).toFixed(2):0}</span>
+                    Earning : <span className="c-theme">{slected_pair_inv?(slected_pair_inv[6]/10**18):0}</span>
                     </h1>
                   </div>
                 </div>
@@ -888,7 +955,11 @@ approval?.()
                 </div> */}
               </div>
             </div>
-            <button className="btn-stack button" onClick={ClaimReward}>Claim</button>
+            <button className="btn-stack button" onClick={ClaimReward}>
+            {!isLoading2_withdrawReward  && !isSuccess2_withdrawReward &&<div>Claim</div>}
+                  {isLoading2_withdrawReward && !isSuccess2_withdrawReward && <div>Loading...</div>}
+                  {!isLoading2_withdrawReward && isSuccess2_withdrawReward && <div>Claim</div>}
+            </button>
           </div>
           <BodyBottom />
         </div>
@@ -896,6 +967,13 @@ approval?.()
                     <Modal open={open} onClose={() => setOpen(false)}>
           <ConfirmationPopup setOpen={setOpen} unstaking={unstaking}/>
         </Modal>
+
+        {/* <Modal
+        open={openConnectWallet}
+        onClose={() => setOpenConnectWallet(false)}
+      >
+        <ConnectWallet setOpenConnectWallet={setOpenConnectWallet} />
+      </Modal> */}
       {/* {unstakeDetails?unstakeDetails[0][0][0]:0} */}
     </div>
   );

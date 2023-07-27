@@ -9,6 +9,7 @@ import {
   ArrowUpIcon,
 } from "../../assets/Icons";
 
+import {useNetwork,  useSwitchNetwork } from 'wagmi'
 
 import ConfirmationPopup from "../../components/confirmationPopup";
 import Web3 from "web3";
@@ -48,7 +49,7 @@ const ThirdBox = ({
 
 
   let count=0;
-
+  const networkId=80001;
 
   const [expend, setExpend] = useState(false);
   const [open, setOpen] = useState(false);
@@ -56,10 +57,12 @@ const ThirdBox = ({
   const [Total_withdraw, set_Total_withdraw] = useState(0);
 
   const [stakeAmount, setStakedAmount] = useState(0);
+  const [curr_time, set_currTime] = useState(0);
 
   const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
   const [allInvestments, set_investmentList] = useState([]);
   const [selectedAmount, setSelectedAmount] = useState(null);
+  const { chain } = useNetwork()
 
 
   const { address, isConnecting ,isDisconnected} = useAccount()
@@ -67,7 +70,7 @@ const ThirdBox = ({
 
   // console.log(typeOf(address));
 
-  const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+  const { data:stakeResult, isLoading:isLoading_stake, isSuccess:stakeSuccess, write:staking } = useContractWrite({
 
     address: stake3_address,
   abi: stake2_3_abi,
@@ -223,6 +226,37 @@ useEffect(()=>{
   })
 
 
+  const {switchNetwork:stake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        approval?.()
+      }
+
+    })
+    const { switchNetwork:unstake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        unstake?.()
+      }
+
+    })
+    const { chains, error, isLoading, pendingChainId, switchNetwork:reward_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        withdrawReward?.()
+      }
+
+    })
+
 
   
   async function test(){
@@ -231,7 +265,9 @@ useEffect(()=>{
               
    const balance =await  web3.eth.getBalance(address)
     const contract=new web3.eth.Contract(stake2_3_abi,stake3_address);
-    
+    let curr_time = await contract.methods.get_currTime().call();    
+    set_currTime(curr_time);
+
     let totalReward = await contract.methods.get_TotalReward().call({ from: address });       
     let Total_withdraw = await contract.methods.total_withdraw_reaward().call({ from: address });       
 
@@ -287,7 +323,13 @@ function Convert_To_eth( val){
     }
 
     console.log((stakeAmount*0.3/100) );
-    approval?.()
+    if(chain.id!=networkId)
+    {
+      stake_switch?.();
+    }else{
+      approval?.()
+
+    }
 
   }
   
@@ -312,8 +354,13 @@ function Convert_To_eth( val){
     //   alert("You dont have enough balance");
     //   return;
     // }
-    unstake?.()
-    console.log(data__unstake);
+    if(chain.id!=networkId)
+    {
+      unstake_switch?.();
+    }else{
+      unstake?.()
+
+    }    console.log(data__unstake);
     
 
   }
@@ -338,8 +385,13 @@ function Convert_To_eth( val){
     //   alert("You dont have enough balance");
     //   return;
     // }
-    withdrawReward?.()
-    
+    if(chain.id!=networkId)
+    {
+      reward_switch?.();
+    }else{
+      withdrawReward?.()
+
+    }    
 
   }
 
@@ -377,14 +429,14 @@ function Convert_To_eth( val){
           </div>
         </div>
         <div className={`expend-detail flex flex-col ${expend ? "show" : ""}`}>
-          <div className="detail-item flex items-center justify-between">
+          {/* <div className="detail-item flex items-center justify-between">
             <div className="lbl-side">Total Liquidity:</div>
             <div className="val-side" >                 
             $60,327971
 
                   
                   </div>
-          </div>
+          </div> */}
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
             <div className="val-side">
@@ -449,7 +501,7 @@ function Convert_To_eth( val){
         >
           {boxNumb !== 3 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s3.png" className="img" />
+            <img src="/images/kore-wbtc.png" className="img" />
             <h1 className="top-tag">KORE/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -496,8 +548,13 @@ function Convert_To_eth( val){
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={stake}>Stake Now</button>
-          </div>
+            <button disabled={isLoading_app || isLoading_stake } className="btn-stack button" onClick={stake}> 
+                 {!isLoading_stake  && !isLoading_app &&! isSuccess_app && !stakeSuccess &&<div>Approve</div>}
+                  {isLoading_app && <div>Approving</div>}
+                  {!stakeSuccess && !isLoading_stake && isSuccess_app && <div>Approved</div>}
+                  {isLoading_stake && <div>Staking</div>}
+                  {!isLoading_app && stakeSuccess && <div>Approve</div>}
+                  </button>           </div>
           <BodyBottom />
         </div>
       ) : selectedTab3 === "Unstake" ? (
@@ -510,7 +567,7 @@ function Convert_To_eth( val){
         >
           {boxNumb !== 3 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s3.png" className="img" />
+          <img src="/images/kore-wbtc.png" className="img" />
             <h1 className="top-tag">KORE/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -583,9 +640,25 @@ function Convert_To_eth( val){
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={(e) => setOpen(true)}>
-              Unstake
-            </button>
+            {
+              selectedAmount?(
+                <button className="btn-stack button" disabled={isLoading_unstake} onClick={(e) =>{selectedAmount && Number(curr_time)>Number(selectedAmount[1])?(setOpen(true)):unstaking()} }>
+                  {!isLoading_unstake  && !isSuccess_unstake &&<div>Unstake</div>}
+                  {isLoading_unstake && !isSuccess_unstake && <div>Loading...</div>}
+                  {!isLoading_unstake && isSuccess_unstake && <div>Unstake</div>}
+
+              </button>
+
+
+
+
+              ):(
+                <button className="btn-stack button">
+                Unstake
+              </button>
+              )
+
+            }
           </div>
           <BodyBottom />
         </div>
@@ -599,7 +672,7 @@ function Convert_To_eth( val){
         >
           {boxNumb !== 3 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s3.png" className="img" />
+          <img src="/images/kore-wbtc.png" className="img" />
             <h1 className="top-tag">KORE/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -607,11 +680,11 @@ function Convert_To_eth( val){
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">${((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">${(Number(totalReward)/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{(Number(totalReward)/10**18).toFixed(2)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -671,7 +744,7 @@ function Convert_To_eth( val){
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                      Earning : <span className="c-theme">${selectedAmount?(selectedAmount[6]/10**18).toFixed(2):0}</span>
+                      Earning : <span className="c-theme">{selectedAmount?(selectedAmount[6]/10**18).toFixed(2):0}</span>
                     </h1>
                   </div>
                 </div>
@@ -692,7 +765,11 @@ function Convert_To_eth( val){
                 </div> */}
               </div>
             </div>
-            <button className="btn-stack button" onClick={ClaimReward}>Claim </button>
+            <button className="btn-stack button" onClick={ClaimReward}>            
+                  {!isLoading2_withdrawReward  && !isSuccess2_withdrawReward &&<div>Claim</div>}
+                  {isLoading2_withdrawReward && !isSuccess2_withdrawReward && <div>Loading...</div>}
+                  {!isLoading2_withdrawReward && isSuccess2_withdrawReward && <div>Claim</div>} 
+                  </button>
           </div>
           <BodyBottom />
         </div>

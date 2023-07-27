@@ -10,6 +10,8 @@ import {
 } from "../../assets/Icons";
 import ConfirmationPopup from "../../components/confirmationPopup";
 import Web3 from "web3";
+import {useNetwork,  useSwitchNetwork } from 'wagmi'
+
 import { useAccount, useDisconnect } from 'wagmi'
 import { stake1_address,stake2_address,stake3_address,stake1_abi,stake2_3_abi,token_abi,Stake2_token_Address } from "../../components/config";
 import { useContractReads,useContractRead ,useContractWrite, usePrepareContractWrite, useWaitForTransaction } from 'wagmi'
@@ -48,34 +50,21 @@ const SecondBox = ({
   const [Total_withdraw, set_Total_withdraw] = useState(0);
 
   const [stakeAmount, setStakedAmount] = useState(0);
+  const [curr_time, set_currTime] = useState(0);
 
   const [choosed_Unstake_inv, set_choosed_Unstake_inv] = useState();
   const [allInvestments, set_investmentList] = useState([]);
   const [selectedAmount, setSelectedAmount] = useState(null);
+  const { chain } = useNetwork()
 
 
   const { address, isConnecting ,isDisconnected} = useAccount()
-  // const { disconnect } = useDisconnect()
-
-  // console.log(typeOf(address));
-
-  // const { config } = usePrepareContractWrite({
-  //   address: Stake2_token_Address,
-  //   abi: token_abi,
-  //   functionName: 'approve',
-  //   args: [stake2_address,stakeAmount*10**18]
-  // })
-  
-  // const { config:stakeConfig } = usePrepareContractWrite({
-  //   address: stake2_address,
-  //   abi: stake2_3_abi,
-  //   functionName: 'Stake',
-  //   args: [stakeAmount*10**18],
-  //   value: ((stakeAmount*0.3/100) * (10**18)).toString() })
+  let count=0;
+  const networkId=80001;
 
 
 
-    const { data:stakeResult, isLoading2, isSuccess:stakeSuccess, write:staking } = useContractWrite({
+    const { data:stakeResult, isLoading:isLoading_stake, isSuccess:stakeSuccess, write:staking } = useContractWrite({
 
       address: stake2_address,
     abi: stake2_3_abi,
@@ -157,8 +146,9 @@ const SecondBox = ({
     },
   })
 
+
+
 useEffect(()=>{
-  let count=0;
   if(count==0&& address!=undefined)
   {
       test()
@@ -228,6 +218,39 @@ useEffect(()=>{
     ],
   })
 
+  const {switchNetwork:stake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        approval?.()
+      }
+
+    })
+    const { switchNetwork:unstake_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        unstake?.()
+      }
+
+    })
+    const { chains, error, isLoading, pendingChainId, switchNetwork:reward_switch } =
+    useSwitchNetwork({
+      chainId: networkId,
+      // throwForSwitchChainNotSupported: true,
+      onSuccess(){
+
+        withdrawReward?.()
+      }
+
+    })
+
+
+  
 
   function Convert_To_Wei( val){
     const web3= new Web3(new Web3.providers.HttpProvider("https://polygon-mumbai.g.alchemy.com/v2/tJeV2dJPtzoWZgLalzn380ynAKIWX9FM"));
@@ -248,7 +271,9 @@ useEffect(()=>{
               
    const balance =await  web3.eth.getBalance(address)
     const contract=new web3.eth.Contract(stake2_3_abi,stake2_address);
-    
+    let curr_time = await contract.methods.get_currTime().call();    
+    set_currTime(curr_time);
+
     let totalReward = await contract.methods.get_TotalReward().call({ from: address });       
     let Total_withdraw = await contract.methods.total_withdraw_reaward().call({ from: address });       
 
@@ -289,8 +314,13 @@ useEffect(()=>{
       alert("You dont have enough balance");
       return;
     }
-    approval?.()
+    if(chain.id!=networkId)
+    {
+      stake_switch?.();
+    }else{
+      approval?.()
 
+    }
 
   }
 
@@ -315,8 +345,13 @@ useEffect(()=>{
     //   alert("You dont have enough balance");
     //   return;
     // }
-    unstake?.()
+    if(chain.id!=networkId)
+    {
+      unstake_switch?.();
+    }else{
+      unstake?.()
 
+    }
     console.log(data__unstake);
     
 
@@ -342,8 +377,13 @@ useEffect(()=>{
     //   alert("You dont have enough balance");
     //   return;
     // }
-    withdrawReward?.()
-    
+    if(chain.id!=networkId)
+    {
+      reward_switch?.();
+    }else{
+      withdrawReward?.()
+
+    }    
 
   }
 
@@ -369,14 +409,14 @@ console.log(data?data[3].result:null);
           </div>
         </div>
         <div className={`expend-detail flex flex-col ${expend ? "show" : ""}`}>
-          <div className="detail-item flex items-center justify-between">
+          {/* <div className="detail-item flex items-center justify-between">
             <div className="lbl-side">Total Liquidity:</div>
             <div className="val-side" >                 
             $60,327971
 
                   
                   </div>
-          </div>
+          </div> */}
           <div className="detail-item flex items-center justify-between">
             <div className="lbl-side"></div>
             <div className="val-side">
@@ -441,7 +481,7 @@ console.log(data?data[3].result:null);
         >
           {boxNumb !== 2 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s2.png" className="img" />
+            <img src="/images/pls-wbtc.png" className="img" />
             <h1 className="top-tag">wPLS/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -490,8 +530,13 @@ console.log(data?data[3].result:null);
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={stake}>Stake Now</button>
-          </div>
+            <button disabled={isLoading_app || isLoading_stake } className="btn-stack button" onClick={stake}> 
+                 {!isLoading_stake  && !isLoading_app &&! isSuccess_app && !stakeSuccess &&<div>Approve</div>}
+                  {isLoading_app && <div>Approving</div>}
+                  {!stakeSuccess && !isLoading_stake && isSuccess_app && <div>Approved</div>}
+                  {isLoading_stake && <div>Staking</div>}
+                  {!isLoading_app && stakeSuccess && <div>Approve</div>}
+                  </button>          </div>
           <BodyBottom />
         </div>
       ) : selectedTab2 === "Unstake" ? (
@@ -504,7 +549,7 @@ console.log(data?data[3].result:null);
         >
           {boxNumb !== 2 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s2.png" className="img" />
+          <img src="/images/pls-wbtc.png" className="img" />
             <h1 className="top-tag">wPLS/WBTC</h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -578,9 +623,25 @@ console.log(data?data[3].result:null);
                 </div>
               </div>
             </div>
-            <button className="btn-stack button" onClick={(e) => setOpen(true)}>
-              Unstake
-            </button>
+            {
+              selectedAmount?(
+                <button className="btn-stack button" disabled={isLoading_unstake} onClick={(e) =>{selectedAmount && Number(curr_time)>Number(selectedAmount[1])?(setOpen(true)):unstaking()} }>
+                  {!isLoading_unstake  && !isSuccess_unstake &&<div>Unstake</div>}
+                  {isLoading_unstake && !isSuccess_unstake && <div>Loading...</div>}
+                  {!isLoading_unstake && isSuccess_unstake && <div>Unstake</div>}
+
+              </button>
+
+
+
+
+              ):(
+                <button className="btn-stack button">
+                Unstake
+              </button>
+              )
+
+            }
           </div>
           <BodyBottom />
         </div>
@@ -594,7 +655,7 @@ console.log(data?data[3].result:null);
         >
           {boxNumb !== 2 && <div className="overlay" />}
           <div className="body-top flex items-center justify-between">
-            <img src="/images/s2.png" className="img" />
+          <img src="/images/pls-wbtc.png" className="img" />
             <h1 className="top-tag">wPLS/WBTC </h1>
           </div>
           <div className="body-meta flex flex-col justify-between h-full">
@@ -602,11 +663,11 @@ console.log(data?data[3].result:null);
               <div className="info-list flex flex-col">
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Total Earnings</h1>
-                  <h1 className="item-lbl text-white">${((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{((Number(Total_withdraw)+Number(totalReward))/10**18).toFixed(2)}</h1>
                 </div>
                 <div className="info-item flex items-center justify-between">
                   <h1 className="item-lbl text-white">Available for claim:</h1>
-                  <h1 className="item-lbl text-white">${(Number(totalReward)/10**18).toFixed(2)}</h1>
+                  <h1 className="item-lbl text-white">{(Number(totalReward)/10**18).toFixed(2)}</h1>
                 </div>
               </div>
               <div className="input-form flex flex-col">
@@ -667,7 +728,7 @@ console.log(data?data[3].result:null);
                   </div>
                   <div className="field-hdr flex items-center justify-end">
                     <h1 className="f-tag">
-                    Earning : <span className="c-theme">${(selectedAmount? Convert_To_eth(selectedAmount[6]):0)}</span>
+                    Earning : <span className="c-theme">{(selectedAmount? Convert_To_eth(selectedAmount[6]):0)}</span>
                     </h1>
                   </div>
                 </div>
@@ -688,7 +749,14 @@ console.log(data?data[3].result:null);
                 </div> */}
               </div>
             </div>
-            <button className="btn-stack button" onClick={ClaimReward}>Claim </button>
+            <button className="btn-stack button" onClick={ClaimReward}>
+            {!isLoading2_withdrawReward  && !isSuccess2_withdrawReward &&<div>Claim</div>}
+                  {isLoading2_withdrawReward && !isSuccess2_withdrawReward && <div>Loading...</div>}
+                  {!isLoading2_withdrawReward && isSuccess2_withdrawReward && <div>Claim</div>}
+              
+               
+              
+              </button>
           </div>
           <BodyBottom />
         </div>
